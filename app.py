@@ -19,10 +19,8 @@ app.secret_key = "supersecretkey"
 if os.environ.get('VERCEL'):
     UPLOAD_FOLDER = '/tmp'
 else:
-    # Esta es tu ruta local para cuando trabajes en tu PC
     UPLOAD_FOLDER = os.path.join('FrontEnd', 'Static', 'Uploads')
 
-# Solo intenta crear la carpeta si NO estás en Vercel
 if not os.environ.get('VERCEL'):
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
@@ -42,7 +40,6 @@ def index():
     tabla_seleccionada = request.args.get('tabla')
     conn = get_db_connection()
     
-    # KPIs para las CARDS (Basado en tus tablas)
     totales = {
         'empleados': conn.execute('SELECT COUNT(*) FROM Empleados').fetchone()[0],
         'vehiculos': conn.execute('SELECT COUNT(*) FROM Vehiculos').fetchone()[0],
