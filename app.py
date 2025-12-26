@@ -12,8 +12,16 @@ import xlsxwriter
 app = Flask(__name__, template_folder='FrontEnd/Templates', static_folder='FrontEnd/Static')
 app.secret_key = "supersecretkey"
 
-UPLOAD_FOLDER = 'FrontEnd/Static/Uploads'
-if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
+if os.environ.get('VERCEL'):
+    UPLOAD_FOLDER = '/tmp'
+else:
+    # Esta es tu ruta local para cuando trabajes en tu PC
+    UPLOAD_FOLDER = os.path.join('FrontEnd', 'Static', 'Uploads')
+
+# Solo intenta crear la carpeta si NO estás en Vercel
+if not os.environ.get('VERCEL'):
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
 
 DATABASE = 'logistica.db'
 
