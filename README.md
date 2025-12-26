@@ -8,7 +8,7 @@
 ---
 
 ## 📌 Contexto del Proyecto: Problemática Real
-Este proyecto fue realizado en base a una problematica real que vive una empresa de logistica en la ciudad de Sincelejo - Sucre - Colombia, fue elaborado con fines educativos y para portafolio personal, todo lo que se encuentra es en base a mi analisis sobre la problematica y como abordarla de la mejor manera. Quiero aclarar el uso de Inteligencia Artificial para un mayor rendimiento a la hora de crear interfaces, no esta demas mencionar que si sabes lo que hace la inteligencia artificial puedes aprovechar mucho su potencial. 
+Este proyecto fue realizado en base a una problematica real que vive una empresa de logistica en la ciudad de Sincelejo - Sucre - Colombia, fue elaborado con fines educativos y para portafolio personal, todo lo que se encuentra es en base a mi analisis sobre la problematica y como abordarla de la mejor manera. Quiero recalcar el uso de la importacion de archivo excel ya que hoy en día se sigue utilizando excel como una base de datos, por lo que este sistema permite adaptarse a ese tipo de empresas.
 
 Gracias por ver este proyecto! Aun soy un estudiante en proceso de aprendizaje!
 ---
