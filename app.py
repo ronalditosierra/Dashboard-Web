@@ -9,7 +9,11 @@ from datetime import datetime
 import io
 import xlsxwriter
 
-app = Flask(__name__, template_folder='FrontEnd/Templates', static_folder='FrontEnd/Static')
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(__name__, 
+            template_folder=os.path.join(base_dir, 'FrontEnd', 'Templates'), 
+            static_folder=os.path.join(base_dir, 'FrontEnd', 'Static'))
 app.secret_key = "supersecretkey"
 
 if os.environ.get('VERCEL'):
