@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Sincelejo S.A.S</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style> * { font-family: 'Poppins', sans-serif; } </style>
+</head>
+<body class="bg-slate-950 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <img src="{{ url_for('static', filename='Images/FONDO.png') }}" alt="Logo" class="w-16 mx-auto mb-4">
+            <h1 class="text-white text-xl font-bold tracking-tight italic uppercase">Sincelejo S.A.S</h1>
+            <p class="text-slate-500 text-[10px] tracking-widest uppercase">Portal de Operaciones</p>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl"></div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="mb-4 p-3 rounded-xl text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                            <i class="bi bi-exclamation-circle mr-2"></i> {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="/login" method="POST" class="space-y-5">
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1.5 ml-1">Correo Corporativo</label>
+                    <div class="relative">
+                        <i class="bi bi-envelope absolute left-4 top-3 text-slate-500"></i>
+                        <input type="email" name="correo" required class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:ring-2 ring-blue-500 outline-none transition-all" placeholder="nombre@empresa.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1.5 ml-1">Contraseña</label>
+                    <div class="relative">
+                        <i class="bi bi-lock absolute left-4 top-3 text-slate-500"></i>
+                        <input type="password" name="password" required class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-11 pr-4 py-3 text-sm text-white focus:ring-2 ring-blue-500 outline-none transition-all" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between px-1">
+                    <label class="flex items-center text-[10px] text-slate-400 cursor-pointer">
+                        <input type="checkbox" class="mr-2 rounded border-slate-700 bg-slate-800 text-blue-600"> Recordarme
+                    </label>
+                    <a href="#" class="text-[10px] text-blue-400 hover:underline">¿Olvidaste tu clave?</a>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all text-sm uppercase tracking-wider">
+                    Entrar al Sistema
+                </button>
+            </form>
+
+            <div class="mt-8 pt-6 border-t border-slate-800 text-center">
+                <p class="text-slate-500 text-[11px]">
+                    ¿No tienes acceso? <a href="{{ url_for('register') }}" class="text-blue-400 hover:underline font-semibold italic">Solicita una cuenta</a>
+                </p>
+            </div>
+        </div>
+        
+        <p class="text-center text-slate-600 text-[9px] mt-8 uppercase tracking-[0.3em]">
+            © 2025 Sincelejo Logística S.A.S
+        </p>
+    </div>
+</body>
+</html>

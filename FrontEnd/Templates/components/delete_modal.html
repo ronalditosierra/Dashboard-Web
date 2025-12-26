@@ -1,0 +1,70 @@
+<div id="deleteModal" class="fixed top-0 left-0 w-full h-full z-[200] hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all">
+    <div id="modalContent" class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden transform scale-95 transition-all border border-white/10">
+        
+        <div class="p-10 text-center">
+            <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-50 dark:bg-red-900/20 mb-6">
+                <i class="bi bi-exclamation-triangle text-red-600 dark:text-red-400 text-3xl animate-pulse"></i>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 dark:text-white mb-3 uppercase tracking-tighter italic">¿Confirmar Borrado?</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed uppercase tracking-tight px-4">
+                El registro seleccionado será eliminado permanentemente del sistema logístico.
+            </p>
+        </div>
+
+        <div class="flex p-4 gap-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
+            <button onclick="closeDeleteModal()" 
+                    id="cancelBtn"
+                    class="flex-1 px-6 py-4 text-[10px] font-black text-slate-500 hover:bg-white dark:hover:bg-slate-700 rounded-2xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+                CANCELAR
+            </button>
+            
+            <button id="confirmBtn" onclick="processDelete()" 
+                    class="flex-1 px-6 py-4 text-[10px] font-black text-white bg-red-600 hover:bg-red-700 rounded-2xl shadow-lg shadow-red-600/20 flex items-center justify-center gap-2 transition-all active:scale-95">
+                <span id="btnText">ELIMINAR</span>
+                <div id="btnSpinner" class="hidden h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let deleteTargetUrl = "";
+const modal = document.getElementById('deleteModal');
+const modalContent = document.getElementById('modalContent');
+
+function openDeleteModal(id) {
+    deleteTargetUrl = `/eliminar_activo/{{ tipo }}/${id}`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => modalContent.classList.replace('scale-95', 'scale-100'), 10);
+}
+
+function closeDeleteModal() {
+    modalContent.classList.replace('scale-100', 'scale-95');
+    setTimeout(() => {
+        modal.classList.replace('flex', 'hidden');
+        resetDeleteButton();
+    }, 200);
+}
+
+function processDelete() {
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    btnText.innerText = "PROCESANDO...";
+    btnSpinner.classList.remove('hidden');
+    confirmBtn.classList.add('opacity-80', 'pointer-events-none');
+    cancelBtn.classList.add('opacity-0', 'pointer-events-none');
+
+    setTimeout(() => { window.location.href = deleteTargetUrl; }, 800);
+}
+
+function resetDeleteButton() {
+    document.getElementById('btnText').innerText = "ELIMINAR";
+    document.getElementById('btnSpinner').classList.add('hidden');
+    document.getElementById('confirmBtn').classList.remove('opacity-80', 'pointer-events-none');
+    document.getElementById('cancelBtn').classList.remove('opacity-0', 'pointer-events-none');
+}
+</script>

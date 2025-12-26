@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Monitoreo de Operaciones</h2>
+            <p class="text-[10px] text-slate-500 font-bold italic">Visualización en tiempo real de logística y distribución</p>
+        </div>
+        <div class="bg-slate-200 dark:bg-slate-800 p-1 rounded-2xl flex items-center shadow-inner">
+            {% for t in ['rutas', 'cargas', 'clientes'] %}
+            <a href="?tipo={{t}}" class="px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all {% if tipo == t %}bg-white dark:bg-blue-600 shadow-md text-blue-600 dark:text-white{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+                {{t}}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        
+        <div class="lg:col-span-8 flex flex-col">
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
+                <div class="p-4 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                    <div class="relative">
+                        <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchInput" placeholder="Filtrar registros de {{ tipo }}..." class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] outline-none focus:ring-2 focus:ring-blue-500 dark:text-white">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto flex-grow">
+                    <table class="w-full text-left text-[11px]">
+                        <thead class="sticky top-0 bg-white dark:bg-slate-900 z-10">
+                            <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase">
+                                {% for col in columnas %}
+                                <th class="px-6 py-4 font-black tracking-widest">{{ col }}</th>
+                                {% endfor %}
+                                <th class="px-6 py-4 text-right w-16">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50 dark:divide-slate-800">
+                            {% for fila in datos %}
+                            <tr class="data-row hover:bg-blue-50/20 dark:hover:bg-blue-900/10 transition-colors">
+                                {% for celda in fila[1:] %}
+                                <td class="px-6 py-4 text-slate-600 dark:text-slate-300 font-bold">{{ celda }}</td>
+                                {% endfor %}
+                                <td class="px-6 py-4 text-right">
+                                    <button onclick="openDeleteModal('{{ fila[0] }}')" class="text-slate-300 hover:text-red-500 transition-colors">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if total_pages > 1 %}
+                <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
+                    <p class="text-[10px] text-slate-500 font-bold">
+                        Mostrando {{ (page-1)*10 + 1 }} - {% if page*10 < total_records %}{{ page*10 }}{% else %}{{ total_records }}{% endif %} de {{ total_records }} registros
+                    </p>
+                    <div class="flex items-center gap-1">
+                        {% if page > 1 %}
+                        <a href="?tipo={{ tipo }}&page={{ page-1 }}" class="px-3 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                        {% endif %}
+                        {% set start_page = page-2 if page-2 > 1 else 1 %}
+                        {% set end_page = page+3 if page+3 <= total_pages+1 else total_pages+1 %}
+                        {% for p in range(start_page, end_page) %}
+                        <a href="?tipo={{ tipo }}&page={{ p }}" class="px-3 py-1 {% if p == page %}bg-blue-600 text-white{% else %}bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600{% endif %} rounded-lg text-[10px] font-bold transition-colors">
+                            {{ p }}
+                        </a>
+                        {% endfor %}
+                        {% if page < total_pages %}
+                        <a href="?tipo={{ tipo }}&page={{ page+1 }}" class="px-3 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="lg:col-span-4 flex flex-col gap-6">
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex-1 flex flex-col">
+                <h4 class="text-[10px] font-black text-slate-400 mb-6 uppercase tracking-widest border-l-4 border-blue-500 pl-3 italic">Volumen por Categoría de Carga</h4>
+                <div class="relative flex-grow flex items-center">
+                    <canvas id="cargasChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex-1 flex flex-col">
+                <h4 class="text-[10px] font-black text-slate-400 mb-6 uppercase tracking-widest border-l-4 border-green-500 pl-3 italic">Ranking de Costos por Destino ($)</h4>
+                <div class="relative flex-grow flex items-center">
+                    <canvas id="rutasChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            datalabels: {
+                color: '#fff',
+                font: { weight: 'bold', size: 10 },
+                formatter: (value) => Math.round(value).toLocaleString()
+            }
+        }
+    };
+    const cargasData = JSON.parse('{{ chart_cargas | safe }}');
+    new Chart(document.getElementById('cargasChart'), {
+        type: 'doughnut',
+        data: {
+            labels: cargasData.labels,
+            datasets: [{
+                data: cargasData.values,
+                backgroundColor: ['#22e025','#e3073a', '#10b981', '#f59e0b', '#ef4444','#3b82f6', '#8b5cf6', '#ec4899'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            ...commonOptions,
+            cutout: '65%',
+            plugins: {
+                ...commonOptions.plugins,
+                legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9, weight: 'bold' } } }
+            }
+        }
+    });
+const rutasData = JSON.parse('{{ chart_rutas | safe }}');
+const maxValor = Math.max(...rutasData.values) * 1.2;
+
+new Chart(document.getElementById('rutasChart'), {
+    type: 'bar',
+    data: {
+        labels: rutasData.labels,
+        datasets: [{
+            data: rutasData.values,
+            backgroundColor: '#3b82f6',
+            borderRadius: 6,
+            barThickness: 20
+        }]
+    },
+    options: {
+        ...commonOptions,
+        indexAxis: 'y',
+        layout: {
+            padding: { right: 50 } 
+        },
+        scales: {
+            x: { 
+                display: false,
+                suggestedMax: maxValor
+            },
+            y: { 
+                ticks: { 
+                    font: { size: 10, weight: 'bold' }, 
+                    color: '#64748b' 
+                }, 
+                grid: { display: false } 
+            }
+        },
+        plugins: {
+            legend: { display: false },
+            datalabels: {
+                anchor: 'end',
+                align: 'right', 
+                offset: 8,     
+                color: '#64748b',
+                font: { weight: 'black', size: 10 },
+                formatter: (value) => '$' + Math.round(value).toLocaleString('es-CO')
+            }
+        }
+    }
+});
+    
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const val = this.value.toLowerCase();
+        document.querySelectorAll('.data-row').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(val) ? "" : "none";
+        });
+    });
+</script>
+{% include "components/delete_modal.html" %}
+{% endblock %}

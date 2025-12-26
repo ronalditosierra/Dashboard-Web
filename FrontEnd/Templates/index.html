@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    <div class="bg-blue-600 p-4 rounded-[2rem] shadow-lg shadow-blue-500/20 text-white flex items-center transition-all hover:scale-[1.02]">
+        <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center mr-3">
+            <i class="bi bi-currency-dollar text-xl"></i>
+        </div>
+        <div>
+            <p class="text-[9px] font-black uppercase tracking-widest opacity-70">Ingresos</p>
+            <p class="text-xl font-black italic">${{ "{:,.0f}".format(ingresos) }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center">
+        <div class="w-11 h-11 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600 mr-3">
+            <i class="bi bi-truck text-xl"></i>
+        </div>
+        <div>
+            <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Flota</p>
+            <p class="text-xl font-black text-slate-900 dark:text-white italic">{{ totales.vehiculos }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center">
+        <div class="w-11 h-11 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600 mr-3">
+            <i class="bi bi-geo-alt text-xl"></i>
+        </div>
+        <div>
+            <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Rutas</p>
+            <p class="text-xl font-black text-slate-900 dark:text-white italic">{{ totales.rutas }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-4 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex items-center">
+        <div class="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 mr-3">
+            <i class="bi bi-people text-xl"></i>
+        </div>
+        <div>
+            <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Personal</p>
+            <p class="text-xl font-black text-slate-900 dark:text-white italic">{{ totales.empleados }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="flex justify-between items-center gap-4 mb-5">
+    <div>
+        <h3 class="text-lg font-black tracking-tighter uppercase italic text-slate-900 dark:text-white">
+            Panel de Análisis
+        </h3>
+    </div>
+
+    {% if session['user_role'] == 'Administrador' %}
+    <form id="uploadForm" action="/upload_file" method="post" enctype="multipart/form-data">
+        <button type="button" onclick="document.getElementById('fileInput').click()" 
+                class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-2 rounded-xl text-[10px] font-black flex items-center shadow-md hover:scale-105 transition-all uppercase tracking-widest">
+            <i class="bi bi-file-earmark-excel-fill mr-2"></i> Cargar Excel
+        </button>
+        <input type="file" name="file" id="fileInput" class="hidden" accept=".xlsx, .csv" onchange="document.getElementById('uploadForm').submit()"/>
+    </form>
+    {% endif %}
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+    <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+        <p class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4">Ingresos Últimos 7 Días</p>
+        <div class="h-60">
+            <canvas id="chartIngresos"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 p-5 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+        <p class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4 text-center">Tipos de Carga</p>
+        <div class="h-60">
+            <canvas id="chartCargas"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-slate-900 p-5 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+    <p class="text-[10px] font-black text-slate-800 dark:text-white uppercase tracking-widest mb-4 italic">Facturación Reciente</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {% for f in recientes %}
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col group">
+            <div class="flex justify-between items-start mb-2">
+                <p class="text-[9px] font-black text-blue-600 uppercase">{{ f['ID_Factura'] }}</p>
+                <span class="text-[7px] px-2 py-0.5 rounded-md font-black uppercase tracking-tighter {% if f['Estado'] == 'Pagada' %}bg-green-100 text-green-700{% else %}bg-amber-100 text-amber-700{% endif %}">
+                    {{ f['Estado'] }}
+                </span>
+            </div>
+            <p class="text-[10px] font-bold text-slate-800 dark:text-slate-200 truncate uppercase">{{ f['Nombre'] }}</p>
+            <p class="text-sm font-black text-slate-900 dark:text-white mt-1">${{ "{:,.0f}".format(f['Monto']) }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="data-ingresos" style="display:none">{{ chart_ingresos }}</div>
+<div id="data-cargas" style="display:none">{{ chart_cargas }}</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dataIngresos = JSON.parse(document.getElementById('data-ingresos').textContent);
+        const dataCargas = JSON.parse(document.getElementById('data-cargas').textContent);
+        
+        const universalGrey = '#64748b'; 
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+        Chart.defaults.color = universalGrey;
+        Chart.defaults.font.family = "'Poppins', sans-serif";
+        Chart.defaults.font.weight = '800';
+
+        new Chart(document.getElementById('chartIngresos'), {
+            type: 'line',
+            data: {
+                labels: dataIngresos.labels,
+                datasets: [{
+                    data: dataIngresos.values,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#2563eb'
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { 
+                        grid: { color: gridColor },
+                        ticks: { color: universalGrey, font: { size: 9 } } 
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: universalGrey, font: { size: 9 } } 
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('chartCargas'), {
+            type: 'doughnut',
+            data: {
+                labels: dataCargas.labels,
+                datasets: [{
+                    data: dataCargas.values,
+                    backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444','#3b82f6'],
+                    borderWidth: 0
+                }]
+            },
+            plugins: [ChartDataLabels],
+            options: {
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { color: universalGrey, padding: 15, usePointStyle: true, font: { size: 9 } } 
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: '900', size: 10 },
+                        anchor: 'center',
+                        align: 'center',
+                        offset: 10,
+                        formatter: (val) => val
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
