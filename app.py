@@ -48,27 +48,21 @@ def index():
     }
 
     if not tabla_seleccionada:
-        # 📊 DATOS PARA GRÁFICOS (Basado en tu Data Dict)
-        
-        # 1. Ingresos (Solo facturas Pagadas)
         ingresos_res = conn.execute('SELECT SUM(Monto) FROM Facturas WHERE Estado="Pagada"').fetchone()
         ingresos_total = ingresos_res[0] if ingresos_res[0] else 0
 
-        # 2. Gráfico Circular: Distribución por Tipo de Carga
         cargas_raw = conn.execute('SELECT Tipo_Carga, COUNT(*) as cant FROM Cargas GROUP BY Tipo_Carga').fetchall()
         chart_cargas = {
             'labels': [row['Tipo_Carga'] for row in cargas_raw],
             'values': [row['cant'] for row in cargas_raw]
         }
 
-        # 3. Gráfico de Líneas: Historial de Montos de Facturas (Tendencia)
         facturas_raw = conn.execute('SELECT Fecha, SUM(Monto) as total FROM Facturas GROUP BY Fecha ORDER BY Fecha ASC').fetchall()
         chart_ingresos = {
             'labels': [row['Fecha'] for row in facturas_raw],
             'values': [row['total'] for row in facturas_raw]
         }
 
-        # 4. Lista de Actividad: Últimas 4 Facturas con nombre del Cliente
         recientes = conn.execute('''
             SELECT f.ID_Factura, c.Nombre, f.Monto, f.Estado 
             FROM Facturas f 
@@ -83,7 +77,6 @@ def index():
                                chart_ingresos=json.dumps(chart_ingresos), tabla_activa='Centro de Control')
 
     else:
-        # VISTA DE TABLAS DINÁMICAS
         datos_tabla = []
         columnas = []
         try:
@@ -96,7 +89,7 @@ def index():
         return render_template('index.html', es_dashboard=False, datos_tabla=datos_tabla, 
                                columnas=columnas, totales=totales, tabla_activa=tabla_seleccionada)
 
-# --- PROCESAMIENTO DE EXCEL ---
+# --- PROCESAMIENTO DE ARCHIVOS EXCEL XLSX Y CSV ---
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
     file = request.files.get('file')
@@ -131,6 +124,8 @@ def login():
             return redirect(url_for('index'))
         flash('Credenciales inválidas', 'danger')
     return render_template('Auth/login.html')
+
+# ---- REGISTRO ----
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -138,24 +133,21 @@ def register():
         apellidos = request.form.get('apellidos')
         correo = request.form.get('correo')
         password = request.form.get('password')
-        rol = request.form.get('rol', 'Usuario') # Rol por defecto
+        rol = request.form.get('rol', 'Usuario')
 
         if not correo or not password:
             flash('Correo y contraseña son obligatorios', 'danger')
             return redirect(url_for('register'))
 
-        # Encriptar contraseña
         hashed_password = generate_password_hash(password)
 
         conn = get_db_connection()
         try:
-            # Verificar si el correo ya existe
             existe = conn.execute('SELECT IDUsuario FROM Usuario WHERE Correo = ?', (correo,)).fetchone()
             if existe:
                 flash('El correo ya está registrado', 'warning')
                 return redirect(url_for('register'))
-
-            # Insertar nuevo usuario
+                        
             conn.execute('''
                 INSERT INTO Usuario (Nombres, Apellidos, Correo, Contrasena, Rol) 
                 VALUES (?, ?, ?, ?, ?)
@@ -172,12 +164,14 @@ def register():
             conn.close()
 
     return render_template('Auth/register.html')
-
+            
+#---- CERRAR SESION ---
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
 
+ # --- PAGINA EMPLEADOS Y VEHICULOS ---           
 @app.route('/activos_internos')
 def activos_internos():
     if 'user_id' not in session: 
@@ -199,7 +193,6 @@ def activos_internos():
         "values": [row[1] for row in res_emp]
     }
 
-    # --- LÓGICA PARA GRÁFICO DE VEHÍCULOS (Marcas) ---
     cursor.execute("SELECT Marca, COUNT(*) FROM Vehiculos GROUP BY Marca")
     res_veh = cursor.fetchall()
     chart_veh = {
@@ -230,13 +223,13 @@ def activos_internos():
                            datos=datos_tabla, columnas=columnas_tabla,
                            page=page, total_pages=total_pages, total_records=total_records,
                            chart_emp=chart_emp, chart_veh=chart_veh)
-
+            
+#--- BOTON DE ELIMINAR ---
 @app.route('/eliminar_activo/<tipo>/<id>')
 def eliminar_activo(tipo, id):
     if 'user_id' not in session: return redirect(url_for('login'))
     conn = get_db_connection()
     
-    # Diccionario de mapeo para hacerlo más limpio
     mapeo = {
         'personal': ('Empleados', 'ID_Empleado'),
         'vehiculos': ('Vehiculos', 'ID_Vehiculo'),
@@ -255,43 +248,41 @@ def eliminar_activo(tipo, id):
             flash(f'Error al eliminar: {e}', 'danger')
     
     conn.close()
-    # Redirige a la página correspondiente (operaciones o activos_internos)
     if tipo in ['clientes', 'cargas', 'rutas']:
         return redirect(url_for('operaciones', tipo=tipo))
     return redirect(url_for('activos_internos', tipo=tipo))
-
+            
+#--- PAGINA DE OPERACIONES CLIENTES, RUTAS ---
 @app.route('/operaciones')
 def operaciones():
     if 'user_id' not in session: return redirect(url_for('login'))
     
-    tipo = request.args.get('tipo', 'rutas') # Por defecto vemos rutas
+    tipo = request.args.get('tipo', 'rutas')
     page = int(request.args.get('page', 1))
     per_page = 10
     offset = (page - 1) * per_page
     conn = get_db_connection()
     
-    # 1. Datos para KPIs
     kpis = {
         'peso_total': conn.execute('SELECT SUM(Peso) FROM Cargas').fetchone()[0] or 0,
         'valor_total': conn.execute('SELECT SUM(Valor_Carga) FROM Cargas').fetchone()[0] or 0,
         'distancia_promedio': conn.execute('SELECT AVG(Distancia) FROM Rutas').fetchone()[0] or 0
     }
 
-    # 2. Datos para Gráfico: Distribución de Carga
+    
     cargas_raw = conn.execute('SELECT Tipo_Carga, COUNT(*) as cant FROM Cargas GROUP BY Tipo_Carga').fetchall()
     chart_cargas = {
         'labels': [row['Tipo_Carga'] for row in cargas_raw],
         'values': [row['cant'] for row in cargas_raw]
     }
 
-    # 3. Datos para Gráfico: Costo por Ruta (Top 5)
+    
     rutas_costo = conn.execute('SELECT Destino, Costo_Transporte FROM Rutas ORDER BY Costo_Transporte DESC LIMIT 5').fetchall()
     chart_rutas = {
         'labels': [row['Destino'] for row in rutas_costo],
         'values': [row['Costo_Transporte'] for row in rutas_costo]
     }
 
-    # 4. Lógica de la Tabla Dinámica con Paginación
     datos_tabla = []
     columnas_tabla = []
     total_records = 0
@@ -317,7 +308,7 @@ def operaciones():
                            chart_rutas=json.dumps(chart_rutas),
                            datos=datos_tabla, columnas=columnas_tabla,
                            page=page, total_pages=total_pages, total_records=total_records)
-
+#--- PAGINA COMERCIAL ---
 @app.route('/gestion_comercial')
 def gestion_comercial():
     if 'user_id' not in session: return redirect(url_for('login'))
@@ -325,21 +316,17 @@ def gestion_comercial():
     mes_filtro = request.args.get('mes')
     conn = get_db_connection()
     
-    # Lógica de Filtro
     query_where = "WHERE Fecha LIKE ?" if mes_filtro else ""
     params = (f"2024-{mes_filtro}%",) if mes_filtro else ()
 
-    # KPIs
     ingresos = conn.execute(f'SELECT SUM(Monto) FROM Facturas {query_where}', params).fetchone()[0] or 0
     gastos = conn.execute(f'SELECT SUM(Monto) FROM Gastos {query_where}', params).fetchone()[0] or 0
     utilidad = ingresos - gastos
     margen = (utilidad / ingresos * 100) if ingresos > 0 else 0
 
-    # Gráfico Cobranza
     cobranza = conn.execute(f'SELECT Estado, SUM(Monto) as total FROM Facturas {query_where} GROUP BY Estado', params).fetchall()
     chart_cobranza = {'labels': [r['Estado'] for r in cobranza], 'values': [r['total'] for r in cobranza]}
 
-    # Gráfico Clientes
     top_clientes = conn.execute(f'''
         SELECT c.Nombre, SUM(f.Monto) as total FROM Facturas f 
         JOIN Clientes c ON f.ID_Cliente = c.ID_Cliente 
@@ -354,7 +341,8 @@ def gestion_comercial():
     return render_template('gestion_comercial.html', vista='comercial', stats={'ingresos': ingresos, 'gastos': gastos, 'utilidad': utilidad, 'margen': margen}, 
                            chart_cobranza=json.dumps(chart_cobranza), chart_top_clientes=json.dumps(chart_top_clientes), 
                            mes_actual=mes_filtro, meses=meses_nombres)
-
+            
+#--- BOTON PARA EXPORTAR INFORMACION A UN EXCEL ---
 @app.route('/exportar_comercial')
 def exportar_comercial():
     mes_filtro = request.args.get('mes')
@@ -365,7 +353,6 @@ def exportar_comercial():
     df_fac = pd.read_sql_query(f"SELECT * FROM Facturas {query_where}", conn, params=params)
     df_gas = pd.read_sql_query(f"SELECT * FROM Gastos {query_where}", conn, params=params)
     
-    # Crear hoja de resumen
     resumen_data = {
         'Concepto': ['Total Ingresos', 'Total Gastos', 'Utilidad Neta', 'Margen %'],
         'Valor': [df_fac['Monto'].sum(), df_gas['Monto'].sum(), df_fac['Monto'].sum() - df_gas['Monto'].sum(), 
